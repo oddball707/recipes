@@ -3,8 +3,10 @@ package dao
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oddball707/recipes/model"
 )
@@ -36,26 +38,33 @@ func (r *PostgresRecipeDAO) CreateRecipe(recipe *model.Recipe) error {
 	defer tx.Rollback(ctx)
 
 	// Insert recipe
-	recipeQuery := `INSERT INTO recipes (id, name, description) VALUES ($1, $2, $3)`
-	_, err = tx.Exec(ctx, recipeQuery, recipe.ID, recipe.Name, recipe.Description)
+	recipeQuery := `INSERT INTO recipes (name, description) VALUES ($1, $2) RETURNING id`
+	err = tx.QueryRow(ctx, recipeQuery, recipe.Name, recipe.Description).Scan(&recipe.ID)
 	if err != nil {
 		return fmt.Errorf("failed to insert recipe: %w", err)
 	}
 
 	// Insert ingredients
-	ingredientQuery := `INSERT INTO ingredients (id, recipe_id, name, quantity, unit) VALUES ($1, $2, $3, $4, $5)`
+	ingredientQuery := `INSERT INTO ingredients (recipe_id, name, quantity, unit_id) VALUES ($1, $2, $3, $4)`
 	for _, ingredient := range recipe.Ingredients {
-		_, err = tx.Exec(ctx, ingredientQuery, ingredient.ID, recipe.ID, ingredient.Name, ingredient.Quantity, ingredient.Unit)
+		unitID, err := r.getOrCreateUnit(ctx, tx, ingredient.Unit)
 		if err != nil {
+			log.Printf("failed to get or create unit: %v", err)
+			return err
+		}
+		_, err = tx.Exec(ctx, ingredientQuery, recipe.ID, ingredient.Name, ingredient.Quantity, unitID)
+		if err != nil {
+			log.Printf("failed to insert ingredient: %v", err)
 			return fmt.Errorf("failed to insert ingredient: %w", err)
 		}
 	}
 
 	// Insert instructions
-	instructionQuery := `INSERT INTO instructions (id, recipe_id, step_number, text) VALUES ($1, $2, $3, $4)`
+	instructionQuery := `INSERT INTO instructions (recipe_id, step_number, text) VALUES ($1, $2, $3)`
 	for _, instruction := range recipe.Instructions {
-		_, err = tx.Exec(ctx, instructionQuery, instruction.ID, recipe.ID, instruction.StepNumber, instruction.Text)
+		_, err = tx.Exec(ctx, instructionQuery, recipe.ID, instruction.StepNumber, instruction.Text)
 		if err != nil {
+			log.Printf("failed to insert instruction: %v", err)
 			return fmt.Errorf("failed to insert instruction: %w", err)
 		}
 	}
@@ -160,9 +169,13 @@ func (r *PostgresRecipeDAO) UpdateRecipe(recipe *model.Recipe) error {
 	}
 
 	// Insert new ingredients
-	ingredientQuery := `INSERT INTO ingredients (id, recipe_id, name, quantity, unit) VALUES ($1, $2, $3, $4, $5)`
+	ingredientQuery := `INSERT INTO ingredients (recipe_id, name, quantity, unit_id) VALUES ($1, $2, $3, $4)`
 	for _, ingredient := range recipe.Ingredients {
-		_, err = tx.Exec(ctx, ingredientQuery, ingredient.ID, recipe.ID, ingredient.Name, ingredient.Quantity, ingredient.Unit)
+		unitID, err := r.getOrCreateUnit(ctx, tx, ingredient.Unit)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(ctx, ingredientQuery, recipe.ID, ingredient.Name, ingredient.Quantity, unitID)
 		if err != nil {
 			return fmt.Errorf("failed to insert ingredient: %w", err)
 		}
@@ -175,9 +188,9 @@ func (r *PostgresRecipeDAO) UpdateRecipe(recipe *model.Recipe) error {
 	}
 
 	// Insert new instructions
-	instructionQuery := `INSERT INTO instructions (id, recipe_id, step_number, text) VALUES ($1, $2, $3, $4)`
+	instructionQuery := `INSERT INTO instructions (recipe_id, step_number, text) VALUES ($1, $2, $3)`
 	for _, instruction := range recipe.Instructions {
-		_, err = tx.Exec(ctx, instructionQuery, instruction.ID, recipe.ID, instruction.StepNumber, instruction.Text)
+		_, err = tx.Exec(ctx, instructionQuery, recipe.ID, instruction.StepNumber, instruction.Text)
 		if err != nil {
 			return fmt.Errorf("failed to insert instruction: %w", err)
 		}
@@ -234,7 +247,12 @@ func (r *PostgresRecipeDAO) DeleteRecipe(id uuid.UUID) error {
 // Helper method to get ingredients for a recipe
 func (r *PostgresRecipeDAO) getIngredients(recipeID uuid.UUID) ([]model.Ingredient, error) {
 	ctx := context.Background()
-	query := `SELECT id, name, quantity, unit FROM ingredients WHERE recipe_id = $1 ORDER BY id`
+	query := `
+		SELECT i.name, i.quantity, u.name, u.abbreviation
+		FROM ingredients i
+		JOIN units u ON i.unit_id = u.id
+		WHERE i.recipe_id = $1
+		ORDER BY i.id`
 	rows, err := r.pool.Query(ctx, query, recipeID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ingredients: %w", err)
@@ -244,12 +262,15 @@ func (r *PostgresRecipeDAO) getIngredients(recipeID uuid.UUID) ([]model.Ingredie
 	var ingredients []model.Ingredient
 	for rows.Next() {
 		var ingredient model.Ingredient
-		var unit string
-		err := rows.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Quantity, &unit)
+		var unitName, unitAbbreviation string
+		err := rows.Scan(&ingredient.Name, &ingredient.Quantity, &unitName, &unitAbbreviation)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan ingredient: %w", err)
 		}
-		ingredient.Unit = model.Unit(unit)
+		ingredient.Unit = &model.Unit{
+			Name:         unitName,
+			Abbreviation: unitAbbreviation,
+		}
 		ingredients = append(ingredients, ingredient)
 	}
 
@@ -259,7 +280,7 @@ func (r *PostgresRecipeDAO) getIngredients(recipeID uuid.UUID) ([]model.Ingredie
 // Helper method to get instructions for a recipe
 func (r *PostgresRecipeDAO) getInstructions(recipeID uuid.UUID) ([]model.Instruction, error) {
 	ctx := context.Background()
-	query := `SELECT id, step_number, text FROM instructions WHERE recipe_id = $1 ORDER BY step_number`
+	query := `SELECT step_number, text FROM instructions WHERE recipe_id = $1 ORDER BY step_number`
 	rows, err := r.pool.Query(ctx, query, recipeID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get instructions: %w", err)
@@ -269,7 +290,7 @@ func (r *PostgresRecipeDAO) getInstructions(recipeID uuid.UUID) ([]model.Instruc
 	var instructions []model.Instruction
 	for rows.Next() {
 		var instruction model.Instruction
-		err := rows.Scan(&instruction.ID, &instruction.StepNumber, &instruction.Text)
+		err := rows.Scan(&instruction.StepNumber, &instruction.Text)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan instruction: %w", err)
 		}
@@ -277,4 +298,34 @@ func (r *PostgresRecipeDAO) getInstructions(recipeID uuid.UUID) ([]model.Instruc
 	}
 
 	return instructions, nil
+}
+
+// getOrCreateUnit gets or creates a unit and returns its ID
+func (r *PostgresRecipeDAO) getOrCreateUnit(ctx context.Context, tx pgx.Tx, unit *model.Unit) (uuid.UUID, error) {
+	if unit == nil {
+		unit = &model.Unit{Name: "", Abbreviation: ""}
+	}
+	var unitID uuid.UUID
+	findUnitQuery := `SELECT id FROM units WHERE abbreviation = $1`
+	err := tx.QueryRow(ctx, findUnitQuery, unit.Abbreviation).Scan(&unitID)
+	if err == nil {
+		return unitID, nil // Found existing unit
+	}
+
+	if err != pgx.ErrNoRows {
+		log.Printf("failed to query for unit: %v", err)
+		return uuid.Nil, fmt.Errorf("failed to query for unit: %w", err)
+	}
+
+	log.Printf("Unit (%s) not found, creating...", unit.Abbreviation)
+
+	// Unit not found, create it
+	unitID = uuid.New()
+	insertUnitQuery := `INSERT INTO units (id, name, abbreviation) VALUES ($1, $2, $3)`
+	_, err = tx.Exec(ctx, insertUnitQuery, unitID, unit.Name, unit.Abbreviation)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to insert new unit: %w", err)
+	}
+
+	return unitID, nil
 }

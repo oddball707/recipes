@@ -14,6 +14,9 @@ func (h *Handler) NewRouter() *chi.Mux {
 	router.Get("/api/readiness", h.ReadinessHandler)
 	router.Post("/api/create", h.CreateRecipe)
 	router.Post("/api/get", h.GetRecipe)
+	router.Post("/api/list", h.ListRecipes)
+	router.Post("/api/update", h.UpdateRecipe)
+	router.Post("/api/delete", h.DeleteRecipe)
 
 	return router
 }

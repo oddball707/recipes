@@ -65,6 +65,17 @@ func (h *Handler) GetRecipe(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(recipe)
 }
 
+func (h *Handler) ListRecipes(w http.ResponseWriter, r *http.Request) {
+	recipes, err := h.service.ListRecipes()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(recipes)
+}
+
 func (h *Handler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
 
 	recipe, err := parseCreateReq(r)

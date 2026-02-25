@@ -12,6 +12,7 @@ type RecipeService struct {
 
 type RecipeClient interface {
 	GetRecipe(id uuid.UUID) (*m.Recipe, error)
+	ListRecipes() ([]*m.Recipe, error)
 	CreateRecipe(recipe *m.Recipe) (*m.Recipe, error)
 	UpdateRecipe(recipe *m.Recipe) (*m.Recipe, error)
 	DeleteRecipe(id uuid.UUID) error
@@ -25,6 +26,10 @@ func NewRecipeService(recipeDAO dao.RecipeDAO) RecipeClient {
 
 func (s *RecipeService) GetRecipe(id uuid.UUID) (*m.Recipe, error) {
 	return s.recipeDAO.GetRecipe(id)
+}
+
+func (s *RecipeService) ListRecipes() ([]*m.Recipe, error) {
+	return s.recipeDAO.GetAllRecipes()
 }
 
 func (s *RecipeService) CreateRecipe(recipe *m.Recipe) (*m.Recipe, error) {
