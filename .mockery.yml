@@ -17,12 +17,8 @@ packages:
     config:
       all: true
       dir: 'dao/'
-    interfaces:
-      ReceipeDAO:
   github.com/oddball707/recipes/service:
     config:
       all: true
       dir: 'service/'
-    interfaces:
-      RecipeService:
 

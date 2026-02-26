@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -131,7 +132,7 @@ func parseGetReq(r *http.Request) (uuid.UUID, error) {
 	id_string := r.URL.Query().Get("id")
 	if id_string == "" {
 		log.Println("Id required for get")
-		return uuid.Nil, nil
+		return uuid.Nil, errors.New("id is required")
 	}
 	id, err := uuid.Parse(id_string)
 	if err != nil {
