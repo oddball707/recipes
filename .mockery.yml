@@ -1,0 +1,24 @@
+all: false
+dir: '{{.InterfaceDir}}'
+filename: '{{.SrcPackageName}}_mock.go'
+force-file-write: true
+formatter: goimports
+generate: true
+include-auto-generated: false
+log-level: info
+structname: '{{.Mock}}{{.InterfaceName}}'
+pkgname: '{{.SrcPackageName}}'
+recursive: false
+require-template-schema-exists: true
+template: testify
+template-schema: '{{.Template}}.schema.json'
+packages:
+  github.com/oddball707/recipes/dao:
+    config:
+      all: true
+      dir: 'dao/'
+  github.com/oddball707/recipes/service:
+    config:
+      all: true
+      dir: 'service/'
+
