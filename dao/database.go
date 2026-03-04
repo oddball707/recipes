@@ -5,24 +5,17 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oddball707/recipes/config"
 )
 
 type Database struct {
 	Pool *pgxpool.Pool
 }
 
-type DBConfig struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	DBName   string
-}
-
 // NewDatabase creates a new database connection to PostgreSQL
-func NewDatabase(cfg DBConfig) (*Database, error) {
+func NewDatabase(cfg config.Config) (*Database, error) {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName)
+		cfg.DB.User, cfg.DB.Password, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)
 
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, connStr)

@@ -57,7 +57,7 @@ test: install-gotestsum # Run all tests (unit+DAL)
 build:
 	GOPROXY=direct CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/main ./main.go
 
-start: build
+start: build start-db
 	./bin/main
 
 start-db: # Start only db dependency

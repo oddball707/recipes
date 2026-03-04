@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
+	"github.com/oddball707/recipes/config"
 	d "github.com/oddball707/recipes/dao"
 	h "github.com/oddball707/recipes/handler"
 	s "github.com/oddball707/recipes/service"
@@ -13,7 +13,7 @@ import (
 
 func main() {
 	// Load configuration
-	cfg, err := LoadConfig()
+	cfg, err := config.Init()
 	if err != nil {
 		log.Fatal("Error loading config - ", err)
 	}
@@ -28,40 +28,14 @@ func main() {
 	// Initialize DAOs and services
 	recipeDAO := d.NewRecipeDAO(db)
 	recipeService := s.NewRecipeService(recipeDAO)
+	hnd := h.NewRecipeHandler(recipeService)
 
-	serve(recipeService)
-}
-
-func serve(srv s.RecipeClient) {
-	hnd := h.NewRecipeHandler(srv)
 	router := hnd.NewRouter()
-
 	http.Handle("/", router)
-	port := getEnv("PORT", "8080")
 
 	fmt.Println("Starting server...")
-	err := http.ListenAndServe(":"+port, router)
+	err = http.ListenAndServe(":"+cfg.Port, router)
 	if err != nil {
-		// cannot panic, because this probably is an intentional close
 		log.Printf("Httpserver: ListenAndServe() error: %s", err)
 	}
-}
-
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}
-
-func LoadConfig() (*d.DBConfig, error) {
-	cfg := &d.DBConfig{
-		Host:     getEnv("DB_HOST", "localhost"),
-		Port:     getEnv("DB_PORT", "5432"),
-		User:     getEnv("DB_USER", "postgres"),
-		Password: getEnv("DB_PASSWORD", "postgres"),
-		DBName:   getEnv("DB_NAME", "postgres"),
-	}
-
-	return cfg, nil
 }
