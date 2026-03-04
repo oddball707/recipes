@@ -129,7 +129,24 @@ func (h *Handler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseGetReq(r *http.Request) (uuid.UUID, error) {
-	id_string := r.URL.Query().Get("id")
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		log.Print("Error reading request body - ", err)
+		return uuid.Nil, err
+	}
+
+	var msg struct {
+		ID string `json:"id"`
+	}
+	err = json.Unmarshal(b, &msg)
+	if err != nil {
+		log.Print("Error Unmarshalling request - ", err)
+		return uuid.Nil, err
+	}
+
+	id_string := msg.ID
+	log.Print("Parsing id - ", id_string)
 	if id_string == "" {
 		log.Println("Id required for get")
 		return uuid.Nil, errors.New("id is required")
