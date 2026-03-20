@@ -1,6 +1,6 @@
 package model
 
 type Instruction struct {
-	StepNumber int
-	Text       string
+	StepNumber int    `json:"stepNumber"`
+	Text       string `json:"text"`
 }

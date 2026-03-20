@@ -5,14 +5,14 @@ import (
 )
 
 type Ingredient struct {
-	Name     string
-	Quantity float64
-	Unit     *Unit
+	Name     string  `json:"name"`
+	Quantity float64 `json:"quantity"`
+	Unit     *Unit   `json:"unit"`
 }
 
 type Unit struct {
-	Name         string
-	Abbreviation string
+	Name         string `json:"name"`
+	Abbreviation string `json:"abbreviation"`
 }
 
 func (u *Unit) UnmarshalJSON(data []byte) error {

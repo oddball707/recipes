@@ -10,14 +10,21 @@ curl -X POST http://localhost:8080/api/create \
     { "name": "Black Pepper", "quantity": 1, "unit": "tsp" }
   ],
   "instructions": [
-    { "step": 1, "description": "Boil water for pasta." },
-    { "step": 2, "description": "Cook guanciale until crispy." },
-    { "step": 3, "description": "Mix eggs and cheese." },
-    { "step": 4, "description": "Cook spaghetti." },
-    { "step": 5, "description": "Combine everything and serve." }
+    { "stepNumber": 1, "text": "Boil water for pasta." },
+    { "stepNumber": 2, "text": "Cook guanciale until crispy." },
+    { "stepNumber": 3, "text": "Mix eggs and cheese." },
+    { "stepNumber": 4, "text": "Cook spaghetti." },
+    { "stepNumber": 5, "text": "Combine everything and serve." }
   ]
 }'
 
 curl -X POST http://localhost:8080/api/list \
--H "Content-Type: application/json" \
+-H "Content-Type: application/json"
 
+curl 'http://localhost:8080/api/get' \
+  -H 'Content-Type: application/json' \
+  --data-raw '{"id":"7f84f163-e1eb-4c99-a626-7659678b44e4"}'
+
+curl 'http://localhost:8080/api/delete' \
+  -H 'Content-Type: application/json' \
+  --data-raw '{"id":"7f84f163-e1eb-4c99-a626-7659678b44e4"}'

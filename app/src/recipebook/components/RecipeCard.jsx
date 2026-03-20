@@ -46,7 +46,7 @@ const RecipeCard = ({ recipe, onClick }) => {
     <StyledCard onClick={() => onClick && onClick(recipe)}>
       <StyledCardMedia
         sx={{
-          background: getCardColor(recipe.Name),
+          background: getCardColor(recipe.name),
         }}
       >
         {/* Image placeholder or actual image if available */}
@@ -62,7 +62,7 @@ const RecipeCard = ({ recipe, onClick }) => {
             minHeight: '2.8em',
           }}
         >
-          {recipe.Name}
+          {recipe.name}
         </Typography>
 
         <Typography
@@ -77,21 +77,21 @@ const RecipeCard = ({ recipe, onClick }) => {
             lineHeight: 1.5,
           }}
         >
-          {recipe.Description}
+          {recipe.description}
         </Typography>
 
         <Box sx={{ mt: 'auto' }}>
-          {recipe.Ingredients && recipe.Ingredients.length > 0 && (
+          {recipe.ingredients && recipe.ingredients.length > 0 && (
             <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
               <Typography variant="caption" color="text.secondary" sx={{ width: '100%' }}>
-                {recipe.Ingredients.length} ingredient{recipe.Ingredients.length !== 1 ? 's' : ''}
+                {recipe.ingredients.length} ingredient{recipe.ingredients.length !== 1 ? 's' : ''}
               </Typography>
             </Stack>
           )}
 
-          {recipe.Instructions && recipe.Instructions.length > 0 && (
+          {recipe.instructions && recipe.instructions.length > 0 && (
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-              {recipe.Instructions.length} step{recipe.Instructions.length !== 1 ? 's' : ''}
+              {recipe.instructions.length} step{recipe.instructions.length !== 1 ? 's' : ''}
             </Typography>
           )}
         </Box>

@@ -57,7 +57,13 @@ test: install-gotestsum # Run all tests (unit+DAL)
 build:
 	GOPROXY=direct CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/main ./main.go
 
-start: build start-db
+build-npm:
+	cd app;	npm install; npm run build;
+
+npm:
+	cd app; VITE_API_URL=http://localhost:8080 npm run dev;
+
+start: build migrations seeds
 	./bin/main
 
 start-db: # Start only db dependency
@@ -91,3 +97,25 @@ clean-docker: # Stop and remove all containers and volumes,
 clean-binaries: # Remove all binaries from bin and build folders
 	rm -rf ${LOCAL_BIN}/*
 	rm -rf $(CURDIR)/build/*
+
+release:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION is required. Usage: make release VERSION=v1.3.1"; \
+		exit 1; \
+	fi
+	@echo "Creating and pushing tag $(VERSION)..."
+	git tag $(VERSION)
+	git push origin $(VERSION)
+	@echo "Updating lambda/go.mod to use $(VERSION)..."
+	@cd lambda && \
+		sed -i.bak 's|github.com/oddball707/trainingCalendar v.*|github.com/oddball707/trainingCalendar $(VERSION)|' go.mod && \
+		sed -i.bak '/^replace github.com\/oddball707\/trainingCalendar/d' go.mod && \
+		rm go.mod.bak && \
+		GOPROXY=direct go get github.com/oddball707/trainingCalendar@$(VERSION) && \
+		go mod tidy
+	@echo "Release $(VERSION) created successfully!"
+	@echo "Next steps:"
+	@echo "  1. Test the lambda build: cd lambda && go build"
+	@echo "  2. Commit the updated lambda/go.mod: git add lambda/go.mod && git commit -m 'Update lambda to $(VERSION)'"
+	@echo "  3. Push changes: git push"
+	@echo "  4. Deploy via 'Update Lambda' GitHub Action"

@@ -95,6 +95,7 @@ func (r *PostgresRecipeDAO) GetRecipe(id uuid.UUID) (*model.Recipe, error) {
 	// Get ingredients
 	ingredients, err := r.getIngredients(id)
 	if err != nil {
+		log.Printf("failed to get ingredients for recipe ID %s: %v", id, err)
 		return nil, err
 	}
 	recipe.Ingredients = ingredients
@@ -102,6 +103,7 @@ func (r *PostgresRecipeDAO) GetRecipe(id uuid.UUID) (*model.Recipe, error) {
 	// Get instructions
 	instructions, err := r.getInstructions(id)
 	if err != nil {
+		log.Printf("failed to get instructions for recipe ID %s: %v", id, err)
 		return nil, err
 	}
 	recipe.Instructions = instructions
@@ -130,12 +132,14 @@ func (r *PostgresRecipeDAO) GetAllRecipes() ([]*model.Recipe, error) {
 		// Get ingredients and instructions for each recipe
 		ingredients, err := r.getIngredients(recipe.ID)
 		if err != nil {
+			log.Printf("failed to get ingredients for recipe ID %s: %v", recipe.ID, err)
 			return nil, err
 		}
 		recipe.Ingredients = ingredients
 
 		instructions, err := r.getInstructions(recipe.ID)
 		if err != nil {
+			log.Printf("failed to get instructions for recipe ID %s: %v", recipe.ID, err)
 			return nil, err
 		}
 		recipe.Instructions = instructions

@@ -80,7 +80,7 @@ const RecipeDetail = ({ recipe, onBack, onEdit, onDelete }) => {
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" sx={{ flex: 1 }}>
-          {recipe.Name}
+          {recipe.name}
         </Typography>
         <Button
           startIcon={<EditIcon />}
@@ -97,7 +97,7 @@ const RecipeDetail = ({ recipe, onBack, onEdit, onDelete }) => {
           color="error"
           onClick={() => {
             if (window.confirm('Are you sure you want to delete this recipe?')) {
-              onDelete && onDelete(recipe.ID);
+              onDelete && onDelete(recipe.id);
             }
           }}
           size="small"
@@ -109,28 +109,28 @@ const RecipeDetail = ({ recipe, onBack, onEdit, onDelete }) => {
       <StyledPaper>
         {/* Description */}
         <Typography variant="body1" paragraph sx={{ color: 'text.secondary', fontSize: '1.1rem' }}>
-          {recipe.Description}
+          {recipe.description}
         </Typography>
 
         <Divider sx={{ my: 3 }} />
 
         {/* Ingredients */}
-        {recipe.Ingredients && recipe.Ingredients.length > 0 && (
+        {recipe.ingredients && recipe.ingredients.length > 0 && (
           <>
             <SectionTitle>Ingredients</SectionTitle>
             <TableContainer>
               <Table>
                 <TableBody>
-                  {recipe.Ingredients.map((ingredient, idx) => (
+                  {recipe.ingredients.map((ingredient, idx) => (
                     <TableRow key={idx}>
                       <TableCell sx={{ border: 'none', py: 1 }}>
                         <Typography variant="body2">
-                          <strong>{ingredient.Quantity}</strong>{' '}
-                          {ingredient.Unit?.Abbreviation || ingredient.Unit?.Name || ''}
+                          <strong>{ingredient.quantity}</strong>{' '}
+                          {ingredient.unit?.abbreviation || ingredient.unit?.name || ''}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ border: 'none', py: 1 }}>
-                        <Typography variant="body2">{ingredient.Name}</Typography>
+                        <Typography variant="body2">{ingredient.name}</Typography>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -143,11 +143,11 @@ const RecipeDetail = ({ recipe, onBack, onEdit, onDelete }) => {
         <Divider sx={{ my: 3 }} />
 
         {/* Instructions */}
-        {recipe.Instructions && recipe.Instructions.length > 0 && (
+        {recipe.instructions && recipe.instructions.length > 0 && (
           <>
             <SectionTitle>Instructions</SectionTitle>
             <Box>
-              {recipe.Instructions.map((instruction, idx) => (
+              {recipe.instructions.map((instruction, idx) => (
                 <Box key={idx} sx={{ mb: 2 }}>
                   <Typography
                     variant="body2"
@@ -175,7 +175,7 @@ const RecipeDetail = ({ recipe, onBack, onEdit, onDelete }) => {
                       {idx + 1}
                     </Box>
                     <Typography variant="body2" sx={{ pt: 0.25 }}>
-                      {instruction.Instruction}
+                      {instruction.text}
                     </Typography>
                   </Typography>
                 </Box>
